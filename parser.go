@@ -12,14 +12,18 @@ const (
 	GCRegexpGo15 = `gc #?\d+ @(?P<ElapsedTime>[\d.]+)s \d+%: [\d.+/]+ ms clock, [\d.+/]+ ms cpu, \d+->\d+->\d+ MB, (?P<Heap1>\d+) MB goal, \d+ P`
 	GCRegexpGo16 = `gc #?\d+ @(?P<ElapsedTime>[\d.]+)s \d+%: (?P<STWSclock>[^+]+)\+(?P<MASclock>[^+]+)\+(?P<STWMclock>[^+]+) ms clock, (?P<STWScpu>[^+]+)\+(?P<MASAssistcpu>[^+]+)/(?P<MASBGcpu>[^+]+)/(?P<MASIdlecpu>[^+]+)\+(?P<STWMcpu>[^+]+) ms cpu, \d+->\d+->\d+ MB, (?P<Heap1>\d+) MB goal, \d+ P`
 
-	SCVGRegexp = `scvg: inuse: (?P<inuse>\d+), idle: (?P<idle>\d+), sys: (?P<sys>\d+), released: (?P<released>\d+), consumed: (?P<consumed>\d+) \(MB\)`
+	SCVGRegexp       = `scvg: inuse: (?P<inuse>\d+), idle: (?P<idle>\d+), sys: (?P<sys>\d+), released: (?P<released>\d+), consumed: (?P<consumed>\d+) \(MB\)`
+	SCVG0Regexp      = `scvg: (?P<released>\d+) MB released`
+	SCVGForcedRegexp = `forced scvg: (?P<released>\d+) MB released`
 )
 
 var (
-	gcrego14 = regexp.MustCompile(GCRegexpGo14)
-	gcrego15 = regexp.MustCompile(GCRegexpGo15)
-	gcrego16 = regexp.MustCompile(GCRegexpGo16)
-	scvgre   = regexp.MustCompile(SCVGRegexp)
+	gcrego14     = regexp.MustCompile(GCRegexpGo14)
+	gcrego15     = regexp.MustCompile(GCRegexpGo15)
+	gcrego16     = regexp.MustCompile(GCRegexpGo16)
+	scvgre       = regexp.MustCompile(SCVGRegexp)
+	scvg0re      = regexp.MustCompile(SCVG0Regexp)
+	scvgforcedre = regexp.MustCompile(SCVGForcedRegexp)
 )
 
 type Parser struct {
@@ -69,6 +73,16 @@ func (p *Parser) Run() {
 			continue
 		}
 
+		if result := scvg0re.FindStringSubmatch(line); result != nil {
+			p.ScvgChan <- parseSCVG0Trace(result)
+			continue
+		}
+
+		if result := scvgforcedre.FindStringSubmatch(line); result != nil {
+			p.ScvgChan <- parseSCVGForcedTrace(result)
+			continue
+		}
+
 		p.NoMatchChan <- line
 	}
 
@@ -96,6 +110,30 @@ func parseGCTrace(gcre *regexp.Regexp, matches []string) *gctrace {
 
 func parseSCVGTrace(matches []string) *scvgtrace {
 	matchMap := getMatchMap(scvgre, matches)
+
+	return &scvgtrace{
+		inuse:    silentParseInt(matchMap["inuse"]),
+		idle:     silentParseInt(matchMap["idle"]),
+		sys:      silentParseInt(matchMap["sys"]),
+		released: silentParseInt(matchMap["released"]),
+		consumed: silentParseInt(matchMap["consumed"]),
+	}
+}
+
+func parseSCVG0Trace(matches []string) *scvgtrace {
+	matchMap := getMatchMap(scvg0re, matches)
+
+	return &scvgtrace{
+		inuse:    silentParseInt(matchMap["inuse"]),
+		idle:     silentParseInt(matchMap["idle"]),
+		sys:      silentParseInt(matchMap["sys"]),
+		released: silentParseInt(matchMap["released"]),
+		consumed: silentParseInt(matchMap["consumed"]),
+	}
+}
+
+func parseSCVGForcedTrace(matches []string) *scvgtrace {
+	matchMap := getMatchMap(scvgforcedre, matches)
 
 	return &scvgtrace{
 		inuse:    silentParseInt(matchMap["inuse"]),

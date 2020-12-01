@@ -103,16 +103,16 @@ func TestParserGoRoutinesInputGo14(t *testing.T) {
 }
 
 func TestParserWithScvgLine(t *testing.T) {
-	line := "scvg1: inuse: 12, idle: 13, sys: 14, released: 15, consumed: 16 (MB)"
+	line := "scvg: inuse: 226, idle: 1947, sys: 2173, released: 1666, consumed: 507 (MB)"
 
 	runParserWith(line)
 
 	expectedScvgTrace := &scvgtrace{
-		inuse:    12,
-		idle:     13,
-		sys:      14,
-		released: 15,
-		consumed: 16,
+		inuse:    226,
+		idle:     1947,
+		sys:      2173,
+		released: 1666,
+		consumed: 507,
 	}
 
 	select {

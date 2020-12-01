@@ -73,15 +73,15 @@ func (p *Parser) Run() {
 			continue
 		}
 
-		if result := scvg0re.FindStringSubmatch(line); result != nil {
-			p.ScvgChan <- parseSCVG0Trace(result)
-			continue
-		}
-
-		if result := scvgforcedre.FindStringSubmatch(line); result != nil {
-			p.ScvgChan <- parseSCVGForcedTrace(result)
-			continue
-		}
+		//if result := scvg0re.FindStringSubmatch(line); result != nil {
+		//	p.ScvgChan <- parseSCVG0Trace(result)
+		//	continue
+		//}
+		//
+		//if result := scvgforcedre.FindStringSubmatch(line); result != nil {
+		//	p.ScvgChan <- parseSCVGForcedTrace(result)
+		//	continue
+		//}
 
 		p.NoMatchChan <- line
 	}
@@ -166,6 +166,10 @@ func silentParseInt(value string) int64 {
 	}
 
 	return intVal
+}
+
+func silentParseInt0(value string) int64 {
+	return 0
 }
 
 func silentParseFloat(value string) float64 {

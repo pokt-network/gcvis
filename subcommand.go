@@ -23,7 +23,7 @@ func NewSubCommand(args []string) *SubCommand {
 		log.Fatal(err)
 	}
 
-	env := append(os.Environ(), "GODEBUG=gctrace=1")
+	env := append(os.Environ(), "GODEBUG=gctrace=1,madvdontneed=1")
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Env = env
 	cmd.Stdin = os.Stdin
